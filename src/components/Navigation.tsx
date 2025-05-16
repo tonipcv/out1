@@ -106,10 +106,6 @@ export default function Navigation() {
         <div className="flex flex-col h-full">
           <div className="h-14 flex items-center px-4 border-b border-gray-200/50 bg-white/10">
             <Link href="/" className="flex items-center justify-center w-full">
-              <Logo size="md" />
-            </Link>
-          </div>
-          <ScrollArea className="flex-1 py-4">
               <div className="relative w-24 h-8">
                 <Image
                   src="/logo.png"
@@ -141,7 +137,11 @@ export default function Navigation() {
               <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-2">
                 <Avatar className="h-8 w-8 ring-1 ring-white/20 bg-white/80">
                   {session?.user?.image ? (
-                    <AvatarImage src={session.user.image} alt={session.user.name || "Profile"} className="object-cover" />
+                    <AvatarImage 
+                      src={session.user.image || ''} 
+                      alt={session.user.name || "Profile"} 
+                      className="object-cover" 
+                    />
                   ) : (
                     <AvatarFallback className="bg-white">
                       <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
@@ -175,7 +175,11 @@ export default function Navigation() {
           <Link href="/profile">
             <Avatar className="h-8 w-8 ring-1 ring-white/20 bg-white/80">
               {session?.user?.image ? (
-                <AvatarImage src={session.user.image} alt={session.user.name || "Profile"} className="object-cover" />
+                <AvatarImage 
+                  src={session.user.image || ''} 
+                  alt={session.user.name || "Profile"} 
+                  className="object-cover" 
+                />
               ) : (
                 <AvatarFallback className="bg-white">
                   <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
