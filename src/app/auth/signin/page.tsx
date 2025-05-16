@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Logo } from '@/components/ui/logo';
 
 export default function SignIn() {
   return (
@@ -93,7 +92,15 @@ function SignInContent() {
     <div className="min-h-screen bg-white relative flex items-center justify-center">
       <div className="w-full max-w-[480px] mx-auto px-4">
         <div className="flex justify-center mb-8 items-center gap-3">
-          <Logo size="lg" />
+          <div className="relative w-20 h-7">
+            <Image
+              src="/logo.png"
+              alt="MED1 Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
           <span className="text-3xl font-semibold text-[#5c5b60]"></span>
         </div>
         
