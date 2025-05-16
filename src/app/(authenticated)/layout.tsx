@@ -24,7 +24,7 @@ export default function AuthenticatedLayout({
     return (
       <div className="min-h-[100dvh] h-full bg-gray-50 flex flex-col items-center justify-center">
         <div className="mb-8">
-          <Logo className="scale-100" variant="dark" />
+          <Logo size="lg" className="scale-100" variant="dark" />
         </div>
         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
       </div>
