@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Logo } from '@/components/ui/logo';
 
 interface NavItem {
   href: string;
@@ -105,6 +106,10 @@ export default function Navigation() {
         <div className="flex flex-col h-full">
           <div className="h-14 flex items-center px-4 border-b border-gray-200/50 bg-white/10">
             <Link href="/" className="flex items-center justify-center w-full">
+              <Logo size="md" />
+            </Link>
+          </div>
+          <ScrollArea className="flex-1 py-4">
               <div className="relative w-24 h-8">
                 <Image
                   src="/logo.png"

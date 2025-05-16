@@ -7,9 +7,9 @@ interface LogoProps {
 }
 
 const SIZES = {
-  sm: 'w-8 h-8',
-  md: 'w-10 h-10',
-  lg: 'w-12 h-12'
+  sm: 'w-20 h-7',    // Mobile navigation size
+  md: 'w-24 h-8',    // Desktop navigation size
+  lg: 'w-32 h-10'    // Larger size if needed
 };
 
 export function Logo({ className, variant = 'dark', size = 'md' }: LogoProps) {
@@ -17,12 +17,10 @@ export function Logo({ className, variant = 'dark', size = 'md' }: LogoProps) {
     <div className={`relative ${SIZES[size]} ${className || ''}`}>
       <Image
         src="/logo.png"
-        alt="Logo"
+        alt="MED1 Logo"
         fill
-        priority
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         className="object-contain"
-        quality={90}
+        priority
       />
     </div>
   );
