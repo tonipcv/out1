@@ -38,6 +38,9 @@ import { PlusCircle, Pencil, Trash2, Building, Link, Mail, Phone, Instagram, Use
 
 type OutboundTableProps = {
   initialOutbounds: Outbound[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
 };
 
 type OutboundWithClinics = Outbound & {
@@ -75,7 +78,12 @@ const createGmailLink = (email: string, name: string) => {
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`;
 };
 
-export default function OutboundTable({ initialOutbounds }: OutboundTableProps) {
+export default function OutboundTable({ 
+  initialOutbounds, 
+  currentPage, 
+  totalPages, 
+  totalItems 
+}: OutboundTableProps) {
   const router = useRouter();
   const [outbounds, setOutbounds] = useState<OutboundWithClinics[]>(initialOutbounds);
   const [isOpen, setIsOpen] = useState(false);
@@ -283,319 +291,322 @@ export default function OutboundTable({ initialOutbounds }: OutboundTableProps) 
     }
   };
 
+  const handlePageChange = (page: number) => {
+    router.push(`/outbound?page=${page}`);
+  };
+
   return (
-    <div>
-      <div className="hidden md:flex items-center justify-end gap-4 mb-8">
-        <Button onClick={handleOpenNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <Button onClick={handleOpenNew} className="bg-white text-black border shadow-sm hover:bg-gray-100">
+          <PlusCircle className="h-4 w-4 mr-2" />
           Novo Contato
         </Button>
       </div>
 
-      <div className="md:hidden mb-3">
-        <div className="flex justify-end">
-          <Button onClick={handleOpenNew} size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novo Contato
-          </Button>
-        </div>
+      {/* Mobile view */}
+      <div className="md:hidden space-y-3">
+        {outbounds.length > 0 ? (
+          outbounds.map((outbound) => (
+            <div key={outbound.id} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex justify-between items-start mb-2.5">
+                <div className="font-semibold text-base text-gray-900">{outbound.nome}</div>
+                <div>
+                  <div
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium w-fit flex items-center gap-1 ${
+                      outbound.status === "abordado"
+                        ? "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
+                        : outbound.status === "respondeu"
+                        ? "bg-blue-100 text-blue-800 border-none hover:bg-blue-200"
+                        : outbound.status === "interessado"
+                        ? "bg-amber-100 text-amber-800 border-none hover:bg-amber-200"
+                        : outbound.status === "publicou link"
+                        ? "bg-green-100 text-green-800 border-none hover:bg-green-200"
+                        : outbound.status === "upgrade lead"
+                        ? "bg-purple-100 text-purple-800 border-none hover:bg-purple-200"
+                        : outbound.status === "convertido"
+                        ? "bg-indigo-100 text-indigo-800 border-none hover:bg-indigo-200"
+                        : "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
+                    }`}
+                  >
+                    {outbound.status || "N/A"}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2 mb-3 text-xs">
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>Especialidade:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium">{outbound.especialidade || 'Não informado'}</div>
+                </div>
+                
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>Instagram:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium">
+                    {outbound.instagram ? (
+                      <a
+                        href={`https://instagram.com/${outbound.instagram}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        @{outbound.instagram}
+                      </a>
+                    ) : (
+                      'Não informado'
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>WhatsApp:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium">
+                    {outbound.whatsapp ? (
+                      <a
+                        href={`https://wa.me/${outbound.whatsapp.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-500 hover:underline"
+                      >
+                        {outbound.whatsapp}
+                      </a>
+                    ) : (
+                      'Não informado'
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>E-mail:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium">
+                    {outbound.email ? (
+                      <a
+                        href={createGmailLink(outbound.email, outbound.nome)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline flex items-center"
+                        title="Abrir no Gmail"
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        {outbound.email}
+                      </a>
+                    ) : (
+                      'Não informado'
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>Endereço:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium">
+                    {outbound.endereco || 'Não informado'}
+                  </div>
+                </div>
+                
+                <div className="flex">
+                  <div className="w-24 flex items-center gap-1 text-gray-500">
+                    <span>Observações:</span>
+                  </div>
+                  <div className="text-gray-700 font-medium max-w-[230px] truncate" title={outbound.observacoes || ""}>
+                    {outbound.observacoes || 'Não informado'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEdit(outbound)}
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs h-7 w-7 p-0"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(outbound.id)}
+                  className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          ))
+        ) : !loading ? (
+          <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
+            Nenhum contato encontrado
+          </div>
+        ) : null}
+        
+        {loading && (
+          <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
+            <div className="h-5 w-5 mx-auto animate-spin text-gray-400 mb-2">
+              <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+            Carregando contatos...
+          </div>
+        )}
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4">
-        {/* Mobile view for small screens */}
-        <div className="md:hidden space-y-3">
-          {outbounds.length > 0 ? (
-            outbounds.map((outbound) => (
-              <div key={outbound.id} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex justify-between items-start mb-2.5">
-                  <div className="font-semibold text-base text-gray-900">{outbound.nome}</div>
-                  <div>
-                    <div
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium w-fit flex items-center gap-1 ${
-                        outbound.status === "abordado"
-                          ? "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
-                          : outbound.status === "respondeu"
-                          ? "bg-blue-100 text-blue-800 border-none hover:bg-blue-200"
-                          : outbound.status === "interessado"
-                          ? "bg-amber-100 text-amber-800 border-none hover:bg-amber-200"
-                          : outbound.status === "publicou link"
-                          ? "bg-green-100 text-green-800 border-none hover:bg-green-200"
-                          : outbound.status === "upgrade lead"
-                          ? "bg-purple-100 text-purple-800 border-none hover:bg-purple-200"
-                          : outbound.status === "convertido"
-                          ? "bg-indigo-100 text-indigo-800 border-none hover:bg-indigo-200"
-                          : "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
-                      }`}
-                    >
-                      {outbound.status || "N/A"}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mb-3 text-xs">
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>Especialidade:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium">{outbound.especialidade || 'Não informado'}</div>
-                  </div>
-                  
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>Instagram:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium">
-                      {outbound.instagram ? (
-                        <a
-                          href={`https://instagram.com/${outbound.instagram}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
-                        >
-                          @{outbound.instagram}
-                        </a>
-                      ) : (
-                        'Não informado'
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>WhatsApp:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium">
-                      {outbound.whatsapp ? (
-                        <a
-                          href={`https://wa.me/${outbound.whatsapp.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-500 hover:underline"
-                        >
-                          {outbound.whatsapp}
-                        </a>
-                      ) : (
-                        'Não informado'
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>E-mail:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium">
-                      {outbound.email ? (
-                        <a
-                          href={createGmailLink(outbound.email, outbound.nome)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline flex items-center"
-                          title="Abrir no Gmail"
-                        >
-                          <Mail className="h-4 w-4 mr-1" />
-                          {outbound.email}
-                        </a>
-                      ) : (
-                        'Não informado'
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>Endereço:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium">
-                      {outbound.endereco || 'Não informado'}
-                    </div>
-                  </div>
-                  
-                  <div className="flex">
-                    <div className="w-24 flex items-center gap-1 text-gray-500">
-                      <span>Observações:</span>
-                    </div>
-                    <div className="text-gray-700 font-medium max-w-[230px] truncate" title={outbound.observacoes || ""}>
-                      {outbound.observacoes || 'Não informado'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleOpenEdit(outbound)}
-                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs h-7 w-7 p-0"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(outbound.id)}
-                    className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            ))
-          ) : !loading ? (
-            <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
-              Nenhum contato encontrado
-            </div>
-          ) : null}
-          
-          {loading && (
-            <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
-              <div className="h-5 w-5 mx-auto animate-spin text-gray-400 mb-2">
-                <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-              Carregando contatos...
-            </div>
-          )}
-        </div>
-        
-        {/* Desktop table view */}
-        <table className="w-full hidden md:table">
+      {/* Desktop view */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
           <TableHeader>
-            <TableRow className="border-b border-gray-200">
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[15%]">Nome</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[12%]">Especialidade</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[10%]">Instagram</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[10%]">WhatsApp</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[12%]">E-mail</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[10%]">Endereço</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[8%]">Status</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500 w-[13%]">Observações</TableHead>
-              <TableHead className="py-3 sm:py-2 px-4 sm:px-3 text-right text-sm sm:text-xs font-medium text-gray-500 w-[10%]">Ações</TableHead>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Especialidade</TableHead>
+              <TableHead>Instagram</TableHead>
+              <TableHead>WhatsApp</TableHead>
+              <TableHead>E-mail</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="divide-y divide-gray-200">
-            {outbounds.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-4 text-gray-500 text-sm">
-                  Nenhum contato encontrado. Adicione seu primeiro contato!
+          <TableBody>
+            {outbounds.map((outbound) => (
+              <TableRow key={outbound.id}>
+                <TableCell className="font-medium">{outbound.nome}</TableCell>
+                <TableCell>{outbound.especialidade || "-"}</TableCell>
+                <TableCell>
+                  {outbound.instagram ? (
+                    <a
+                      href={`https://instagram.com/${outbound.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline"
+                    >
+                      @{outbound.instagram}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+                <TableCell>
+                  {outbound.whatsapp ? (
+                    <a
+                      href={`https://wa.me/${outbound.whatsapp.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-500 hover:underline"
+                    >
+                      {outbound.whatsapp}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+                <TableCell>
+                  {outbound.email ? (
+                    <a
+                      href={createGmailLink(outbound.email, outbound.nome)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline flex items-center"
+                      title="Abrir no Gmail"
+                    >
+                      <Mail className="h-4 w-4 mr-1" />
+                      {outbound.email}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
+                      outbound.status === "abordado"
+                        ? "bg-gray-100 text-gray-800"
+                        : outbound.status === "respondeu"
+                        ? "bg-blue-100 text-blue-800"
+                        : outbound.status === "interessado"
+                        ? "bg-amber-100 text-amber-800"
+                        : outbound.status === "publicou link"
+                        ? "bg-green-100 text-green-800"
+                        : outbound.status === "upgrade lead"
+                        ? "bg-purple-100 text-purple-800"
+                        : outbound.status === "convertido"
+                        ? "bg-indigo-100 text-indigo-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {outbound.status || "N/A"}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEdit(outbound)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(outbound.id)}
+                      className="text-gray-500 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : (
-              outbounds.map((outbound) => (
-                <TableRow key={outbound.id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="font-medium text-base sm:text-sm text-gray-900">{outbound.nome}</div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="text-gray-600 text-sm sm:text-xs">{outbound.especialidade || "-"}</div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="text-gray-600 text-sm sm:text-xs">
-                      {outbound.instagram ? (
-                        <a
-                          href={`https://instagram.com/${outbound.instagram}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
-                        >
-                          @{outbound.instagram}
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="text-gray-600 text-sm sm:text-xs">
-                      {outbound.whatsapp ? (
-                        <a
-                          href={`https://wa.me/${outbound.whatsapp.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-500 hover:underline"
-                        >
-                          {outbound.whatsapp}
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="text-gray-600 text-sm sm:text-xs">
-                      {outbound.email ? (
-                        <a
-                          href={createGmailLink(outbound.email, outbound.nome)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline flex items-center"
-                          title="Abrir no Gmail"
-                        >
-                          <Mail className="h-4 w-4 mr-1" />
-                          {outbound.email}
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div className="text-gray-600 text-sm sm:text-xs">{outbound.endereco || "-"}</div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3">
-                    <div
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium w-fit flex items-center gap-1 ${
-                        outbound.status === "abordado"
-                          ? "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
-                          : outbound.status === "respondeu"
-                          ? "bg-blue-100 text-blue-800 border-none hover:bg-blue-200"
-                          : outbound.status === "interessado"
-                          ? "bg-amber-100 text-amber-800 border-none hover:bg-amber-200"
-                          : outbound.status === "publicou link"
-                          ? "bg-green-100 text-green-800 border-none hover:bg-green-200"
-                          : outbound.status === "upgrade lead"
-                          ? "bg-purple-100 text-purple-800 border-none hover:bg-purple-200"
-                          : outbound.status === "convertido"
-                          ? "bg-indigo-100 text-indigo-800 border-none hover:bg-indigo-200"
-                          : "bg-gray-100 text-gray-800 border-none hover:bg-gray-200"
-                      }`}
-                    >
-                      {outbound.status || "N/A"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3 w-[13%]">
-                    <div className="text-gray-600 text-sm sm:text-xs truncate" title={outbound.observacoes || ""}>
-                      {outbound.observacoes || "-"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 sm:py-2 px-4 sm:px-3 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEdit(outbound)}
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-sm sm:text-xs h-9 sm:h-7 px-3 sm:px-2"
-                      >
-                        <Pencil className="h-4 w-4 sm:h-3 sm:w-3 mr-2 sm:mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(outbound.id)}
-                        className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
-        </table>
+        </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between px-2">
+        <div className="text-sm text-gray-500">
+          Mostrando {outbounds.length} de {totalItems} resultados
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+          >
+            Anterior
+          </Button>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            Próxima
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

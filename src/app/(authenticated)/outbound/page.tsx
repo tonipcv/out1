@@ -8,21 +8,43 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ViewColumnsIcon } from "@heroicons/react/24/outline";
 
-export default async function OutboundPage() {
+interface PageProps {
+  searchParams: {
+    page?: string;
+    limit?: string;
+  };
+}
+
+export default async function OutboundPage({ searchParams }: PageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
     redirect("/login");
   }
 
-  const outbounds = await prisma.outbound.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const page = Number(searchParams.page) || 1;
+  const limit = Number(searchParams.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const [outbounds, total] = await Promise.all([
+    prisma.outbound.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      skip: skip,
+    }),
+    prisma.outbound.count({
+      where: {
+        userId: session.user.id,
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="min-h-[100dvh] bg-gray-100 pb-24 lg:pb-16 lg:ml-52 px-2 sm:px-4">
@@ -46,7 +68,12 @@ export default async function OutboundPage() {
 
         <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
           <CardContent className="pt-6 pb-4 sm:pb-3 px-6 sm:px-4">
-            <OutboundTable initialOutbounds={outbounds} />
+            <OutboundTable 
+              initialOutbounds={outbounds} 
+              currentPage={page} 
+              totalPages={totalPages} 
+              totalItems={total}
+            />
           </CardContent>
         </Card>
       </div>

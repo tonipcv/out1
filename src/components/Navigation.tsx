@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   UserCircleIcon,
   MegaphoneIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,8 @@ export default function Navigation() {
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
     '/profile',
-    '/outbound'
+    '/outbound',
+    '/resumo'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -48,6 +50,12 @@ export default function Navigation() {
     {
       title: "Dashboard",
       items: [
+        {
+          href: '/resumo',
+          label: 'Resumo',
+          icon: ChartBarIcon,
+          description: 'Visão geral dos contatos'
+        },
         {
           href: '/outbound',
           label: 'Outbound',
