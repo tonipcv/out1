@@ -6,6 +6,7 @@ import {
   UserCircleIcon,
   MegaphoneIcon,
   ChartBarIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,8 @@ export default function Navigation() {
   const protectedRoutes = [
     '/profile',
     '/outbound',
-    '/resumo'
+    '/resumo',
+    '/clinicas'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -61,6 +63,12 @@ export default function Navigation() {
           label: 'Outbound',
           icon: MegaphoneIcon,
           description: 'Prospecção ativa'
+        },
+        {
+          href: '/clinicas',
+          label: 'Clínicas',
+          icon: BuildingOffice2Icon,
+          description: 'Gerenciar clínicas'
         },
       ]
     }

@@ -17,8 +17,8 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
         helvetica: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        sans: ['var(--font-satoshi)'],
       },
       fontWeight: {
         thin: '100',
