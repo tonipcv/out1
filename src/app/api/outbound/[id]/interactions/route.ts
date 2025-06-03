@@ -103,7 +103,7 @@ export async function POST(
     
     // Gerar ID único
     const id = `ci_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const now = new Date().toISOString();
+    const now = new Date();
     
     // Inserir nova interação
     await prisma.$executeRaw`

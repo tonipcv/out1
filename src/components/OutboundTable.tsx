@@ -587,16 +587,73 @@ export default function OutboundTable({
             Anterior
           </Button>
           <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === currentPage ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </Button>
-            ))}
+            {(() => {
+              const pages: (React.ReactElement | React.ReactNode)[] = [];
+              const maxVisiblePages = 5;
+              const halfVisible = Math.floor(maxVisiblePages / 2);
+              
+              let startPage = Math.max(1, currentPage - halfVisible);
+              let endPage = Math.min(totalPages, currentPage + halfVisible);
+              
+              // Ajustar se estivermos no início ou fim
+              if (endPage - startPage + 1 < maxVisiblePages) {
+                if (startPage === 1) {
+                  endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                } else {
+                  startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+              }
+              
+              // Primeira página
+              if (startPage > 1) {
+                pages.push(
+                  <Button
+                    key={1}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(1)}
+                  >
+                    1
+                  </Button>
+                );
+                if (startPage > 2) {
+                  pages.push(<span key="start-ellipsis" className="px-2 text-gray-400">...</span>);
+                }
+              }
+              
+              // Páginas visíveis
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <Button
+                    key={i}
+                    variant={i === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(i)}
+                  >
+                    {i}
+                  </Button>
+                );
+              }
+              
+              // Última página
+              if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                  pages.push(<span key="end-ellipsis" className="px-2 text-gray-400">...</span>);
+                }
+                pages.push(
+                  <Button
+                    key={totalPages}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(totalPages)}
+                  >
+                    {totalPages}
+                  </Button>
+                );
+              }
+              
+              return pages;
+            })()}
           </div>
           <Button
             variant="outline"
