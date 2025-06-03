@@ -13,10 +13,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Amoriu',
-    template: '%s | Amoriu'
+    default: 'Cslus Outbound',
+    template: '%s | Cslus Outbound'
   },
-  description: 'Amoriu - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
+  description: 'Cslus Outbound - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
   manifest: '/manifest.json',
   icons: {
     icon: [
