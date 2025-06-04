@@ -12,7 +12,7 @@ const clinicSchema = z.object({
   site: z.string().optional().nullable(),
   linkBio: z.string().optional().nullable(),
   contato: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   whatsapp: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
 });
@@ -92,9 +92,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar se já existe uma clínica com o mesmo nome
+    const existingClinic = await prisma.clinic.findFirst({
+      where: {
+        nome: {
+          equals: validatedData.data.nome,
+          mode: 'insensitive'
+        }
+      }
+    });
+
+    if (existingClinic) {
+      return NextResponse.json(
+        { error: "Já existe uma clínica com este nome" },
+        { status: 409 }
+      );
+    }
+
+    // Processar o email - se for string vazia, converter para null
+    const processedData = {
+      ...validatedData.data,
+      email: validatedData.data.email === "" ? null : validatedData.data.email
+    };
+
     // Criar a nova clínica
     const clinic = await prisma.clinic.create({
-      data: validatedData.data,
+      data: processedData,
     });
 
     return NextResponse.json(clinic, { status: 201 });

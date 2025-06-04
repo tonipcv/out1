@@ -13,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Cslus Outbound',
+    default: 'Cslus Outboundgit',
     template: '%s | Cslus Outbound'
   },
   description: 'Cslus Outbound - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',

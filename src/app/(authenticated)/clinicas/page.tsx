@@ -164,6 +164,15 @@ export default function ClinicasPage() {
       return;
     }
 
+    // Validar email se fornecido
+    if (currentClinic.email && currentClinic.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(currentClinic.email.trim())) {
+        toast.error('Por favor, insira um e-mail válido');
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       
@@ -184,7 +193,21 @@ export default function ClinicasPage() {
         fetchClinics();
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Erro ao salvar clínica');
+        
+        // Tratar diferentes tipos de erro
+        if (response.status === 409) {
+          toast.error('Já existe uma clínica com este nome. Por favor, escolha outro nome.');
+        } else if (response.status === 400 && error.details) {
+          // Erros de validação do Zod
+          const firstError = Object.values(error.details)[0] as any;
+          if (firstError && firstError._errors && firstError._errors[0]) {
+            toast.error(firstError._errors[0]);
+          } else {
+            toast.error('Dados inválidos. Verifique os campos preenchidos.');
+          }
+        } else {
+          toast.error(error.error || 'Erro ao salvar clínica');
+        }
       }
     } catch (error) {
       console.error('Erro ao salvar clínica:', error);

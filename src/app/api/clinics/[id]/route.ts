@@ -12,7 +12,7 @@ const clinicUpdateSchema = z.object({
   site: z.string().optional().nullable(),
   linkBio: z.string().optional().nullable(),
   contato: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   whatsapp: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
 });
@@ -101,10 +101,38 @@ export async function PUT(
       return NextResponse.json({ error: "Clínica não encontrada" }, { status: 404 });
     }
 
+    // Se o nome está sendo alterado, verificar se já existe outra clínica com o mesmo nome
+    if (validatedData.data.nome && validatedData.data.nome !== existingClinic.nome) {
+      const duplicateClinic = await prisma.clinic.findFirst({
+        where: {
+          nome: {
+            equals: validatedData.data.nome,
+            mode: 'insensitive'
+          },
+          id: {
+            not: clinicId
+          }
+        }
+      });
+
+      if (duplicateClinic) {
+        return NextResponse.json(
+          { error: "Já existe uma clínica com este nome" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Processar o email - se for string vazia, converter para null
+    const processedData = {
+      ...validatedData.data,
+      email: validatedData.data.email === "" ? null : validatedData.data.email
+    };
+
     // Atualizar a clínica
     const updatedClinic = await prisma.clinic.update({
       where: { id: clinicId },
-      data: validatedData.data,
+      data: processedData,
     });
 
     return NextResponse.json(updatedClinic);
