@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const format = (searchParams.get('format') || '').toLowerCase();
+
     // Buscar todos os contatos de outbound do usuário atual
     const outbounds = await prisma.outbound.findMany({
       where: {
@@ -48,6 +51,55 @@ export async function GET(request: NextRequest) {
         createdAt: "desc",
       },
     });
+
+    if (format === 'csv') {
+      const headers = [
+        'id',
+        'nome',
+        'especialidade',
+        'instagram',
+        'whatsapp',
+        'email',
+        'status',
+        'observacoes',
+        'endereco',
+        'createdAt',
+        'updatedAt',
+      ];
+
+      const escapeCsv = (val: unknown) => {
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (/[",\n]/.test(str)) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      };
+
+      const rows = outbounds.map((o) => [
+        o.id,
+        o.nome,
+        o.especialidade ?? '',
+        o.instagram ?? '',
+        o.whatsapp ?? '',
+        o.email ?? '',
+        o.status ?? '',
+        o.observacoes ?? '',
+        o.endereco ?? '',
+        (o as any).createdAt?.toISOString?.() ?? String((o as any).createdAt),
+        (o as any).updatedAt?.toISOString?.() ?? String((o as any).updatedAt),
+      ].map(escapeCsv).join(','));
+
+      const csvContent = '\ufeff' + [headers.join(','), ...rows].join('\n');
+      const filename = `outbound-${new Date().toISOString().slice(0, 10)}.csv`;
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
 
     return NextResponse.json(outbounds);
   } catch (error) {

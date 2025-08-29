@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { 
   Building2,
@@ -25,7 +26,8 @@ import {
   Edit,
   Trash2,
   ExternalLink,
-  Loader2
+  Loader2,
+  Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,9 @@ interface Clinic {
   email?: string | null;
   whatsapp?: string | null;
   observacoes?: string | null;
+  prospectEmail?: boolean;
+  prospectCall?: boolean;
+  prospectWhatsapp?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +61,9 @@ interface ClinicFormData {
   email?: string;
   whatsapp?: string;
   observacoes?: string;
+  prospectEmail?: boolean;
+  prospectCall?: boolean;
+  prospectWhatsapp?: boolean;
 }
 
 export default function ClinicasPage() {
@@ -69,9 +77,23 @@ export default function ClinicasPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentClinic, setCurrentClinic] = useState<ClinicFormData>({
     nome: '',
+    prospectEmail: false,
+    prospectCall: false,
+    prospectWhatsapp: false,
   });
   const [editingClinicId, setEditingClinicId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  // Prospecting filters (missing flags)
+  const [missingEmail, setMissingEmail] = useState(false);
+  const [missingCall, setMissingCall] = useState(false);
+  const [missingWhatsapp, setMissingWhatsapp] = useState(false);
+  // WhatsApp API send state
+  const [isWhatsDialogOpen, setIsWhatsDialogOpen] = useState(false);
+  const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [targetWhatsNumber, setTargetWhatsNumber] = useState<string | null>(null);
+  const [targetClinicName, setTargetClinicName] = useState<string | null>(null);
+  const [sendingWhats, setSendingWhats] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,7 +109,7 @@ export default function ClinicasPage() {
 
   useEffect(() => {
     fetchClinics();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, missingEmail, missingCall, missingWhatsapp]);
 
   const fetchClinics = async () => {
     try {
@@ -97,6 +119,11 @@ export default function ClinicasPage() {
         limit: itemsPerPage.toString(),
         ...(searchTerm && { search: searchTerm }),
       });
+      const missing: string[] = [];
+      if (missingEmail) missing.push('email');
+      if (missingCall) missing.push('call');
+      if (missingWhatsapp) missing.push('whatsapp');
+      if (missing.length > 0) params.set('missing', missing.join(','));
 
       const response = await fetch(`/api/clinics?${params}`);
       
@@ -113,6 +140,67 @@ export default function ClinicasPage() {
       toast.error('Erro ao carregar clínicas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Toggle a prospecting flag with optimistic update
+  type ProspectKey = 'prospectEmail' | 'prospectCall' | 'prospectWhatsapp';
+  const toggleProspectFlag = async (clinicId: string, key: ProspectKey, value: boolean) => {
+    // Optimistic UI update
+    setClinics((prev) => prev.map((c) => (c.id === clinicId ? { ...c, [key]: value } as Clinic : c)));
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Falha ao atualizar prospecção');
+      }
+    } catch (e: any) {
+      // Revert on error
+      setClinics((prev) => prev.map((c) => (c.id === clinicId ? { ...c, [key]: !value } as Clinic : c)));
+      toast.error(e?.message || 'Erro ao atualizar prospecção');
+    }
+  };
+
+  const openWhatsDialog = (clinic: Clinic) => {
+    if (!clinic.whatsapp) {
+      toast.error('Esta clínica não possui WhatsApp cadastrado');
+      return;
+    }
+    setTargetWhatsNumber(clinic.whatsapp);
+    setTargetClinicName(clinic.nome);
+    setWhatsappMessage(`Olá ${clinic.contato ? clinic.contato : clinic.nome}, tudo bem?`);
+    setIsWhatsDialogOpen(true);
+  };
+
+  const sendWhatsappViaApi = async () => {
+    if (!targetWhatsNumber || !whatsappMessage.trim()) {
+      toast.error('Número e mensagem são obrigatórios');
+      return;
+    }
+    try {
+      setSendingWhats(true);
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: targetWhatsNumber, message: whatsappMessage.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || 'Falha ao enviar WhatsApp');
+        return;
+      }
+      toast.success('Mensagem enviada pelo WhatsApp');
+      setIsWhatsDialogOpen(false);
+      setWhatsappMessage('');
+    } catch (e) {
+      console.error('Erro ao enviar WhatsApp:', e);
+      toast.error('Erro ao enviar WhatsApp');
+    } finally {
+      setSendingWhats(false);
     }
   };
 
@@ -136,6 +224,9 @@ export default function ClinicasPage() {
       email: clinic.email || '',
       whatsapp: clinic.whatsapp || '',
       observacoes: clinic.observacoes || '',
+      prospectEmail: clinic.prospectEmail ?? false,
+      prospectCall: clinic.prospectCall ?? false,
+      prospectWhatsapp: clinic.prospectWhatsapp ?? false,
     });
     setEditingClinicId(clinic.id);
     setIsDialogOpen(true);
@@ -250,6 +341,46 @@ export default function ClinicasPage() {
     router.push(`/clinicas?page=${page}`);
   };
 
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      const params = new URLSearchParams();
+      params.set('format', 'csv');
+      if (searchTerm) params.set('search', searchTerm);
+
+      // maintain missing filters in export
+      if (missingEmail || missingCall || missingWhatsapp) {
+        const m: string[] = [];
+        if (missingEmail) m.push('email');
+        if (missingCall) m.push('call');
+        if (missingWhatsapp) m.push('whatsapp');
+        params.set('missing', m.join(','));
+      }
+      const res = await fetch(`/api/clinics?${params.toString()}`, {
+        method: 'GET',
+      });
+      if (!res.ok) {
+        toast.error('Erro ao exportar CSV');
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clinicas-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV exportado');
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      toast.error('Erro ao exportar CSV');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -271,10 +402,25 @@ export default function ClinicasPage() {
             <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie todas as clínicas do seu sistema</p>
           </div>
           
-          <Button onClick={handleOpenNew} className="flex items-center gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Nova Clínica
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={handleExportCsv}
+              className="flex items-center gap-2 w-full sm:w-auto"
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Exportar CSV
+            </Button>
+            <Button onClick={handleOpenNew} className="flex items-center gap-2 w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              Nova Clínica
+            </Button>
+          </div>
         </div>
 
         <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
@@ -290,6 +436,28 @@ export default function ClinicasPage() {
                   className="pl-10"
                 />
               </div>
+            </div>
+
+            {/* Missing Filters */}
+            <div className="mb-4 sm:mb-6 flex flex-wrap items-center gap-4">
+              <div className="text-sm text-gray-700 font-medium">Faltando prospecção:</div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={missingEmail} onCheckedChange={(v) => setMissingEmail(!!v)} />
+                E-mail
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={missingCall} onCheckedChange={(v) => setMissingCall(!!v)} />
+                Ligação
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={missingWhatsapp} onCheckedChange={(v) => setMissingWhatsapp(!!v)} />
+                WhatsApp
+              </label>
+              {(missingEmail || missingCall || missingWhatsapp) && (
+                <Button variant="ghost" size="sm" onClick={() => { setMissingEmail(false); setMissingCall(false); setMissingWhatsapp(false); }}>
+                  Limpar filtros
+                </Button>
+              )}
             </div>
 
             {/* Stats */}
@@ -338,6 +506,7 @@ export default function ClinicasPage() {
                         <TableHead>Médicos</TableHead>
                         <TableHead>Contato</TableHead>
                         <TableHead>Redes Sociais</TableHead>
+                        <TableHead>Prospecção</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -420,8 +589,43 @@ export default function ClinicasPage() {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={!!clinic.prospectEmail}
+                                  onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectEmail', !!v)}
+                                />
+                                E-mail
+                              </label>
+                              <label className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={!!clinic.prospectCall}
+                                  onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectCall', !!v)}
+                                />
+                                Ligação
+                              </label>
+                              <label className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={!!clinic.prospectWhatsapp}
+                                  onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectWhatsapp', !!v)}
+                                />
+                                WhatsApp
+                              </label>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openWhatsDialog(clinic)}
+                                className="h-8 px-2 text-green-600 hover:text-green-700"
+                                disabled={!clinic.whatsapp}
+                                title={clinic.whatsapp ? 'Enviar WhatsApp (API)' : 'Sem WhatsApp cadastrado'}
+                              >
+                                <Phone className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -518,6 +722,17 @@ export default function ClinicasPage() {
                               <span>{clinic.whatsapp}</span>
                             </a>
                           )}
+                          <div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 text-green-700 border-green-200"
+                              onClick={() => openWhatsDialog(clinic)}
+                              disabled={!clinic.whatsapp}
+                            >
+                              Enviar via API
+                            </Button>
+                          </div>
                         </div>
                         
                         {/* Social Links */}
@@ -550,6 +765,31 @@ export default function ClinicasPage() {
                           </div>
                         )}
                         
+                        {/* Prospecting Toggles */}
+                        <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-2 text-sm">
+                          <label className="flex items-center gap-2">
+                            <Checkbox
+                              checked={!!clinic.prospectEmail}
+                              onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectEmail', !!v)}
+                            />
+                            E-mail
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <Checkbox
+                              checked={!!clinic.prospectCall}
+                              onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectCall', !!v)}
+                            />
+                            Ligação
+                          </label>
+                          <label className="flex items-center gap-2 col-span-2">
+                            <Checkbox
+                              checked={!!clinic.prospectWhatsapp}
+                              onCheckedChange={(v) => toggleProspectFlag(clinic.id, 'prospectWhatsapp', !!v)}
+                            />
+                            WhatsApp
+                          </label>
+                        </div>
+
                         {/* Observations */}
                         {clinic.observacoes && (
                           <div className="pt-2 border-t border-gray-100">
@@ -722,6 +962,34 @@ export default function ClinicasPage() {
                   placeholder="Observações adicionais sobre a clínica"
                 />
               </div>
+
+              {/* Prospecting Flags */}
+              <div className="md:col-span-2">
+                <Label>Prospecção realizada</Label>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={!!currentClinic.prospectEmail}
+                      onCheckedChange={(v) => setCurrentClinic((p) => ({ ...p, prospectEmail: !!v }))}
+                    />
+                    E-mail
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={!!currentClinic.prospectCall}
+                      onCheckedChange={(v) => setCurrentClinic((p) => ({ ...p, prospectCall: !!v }))}
+                    />
+                    Ligação
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={!!currentClinic.prospectWhatsapp}
+                      onCheckedChange={(v) => setCurrentClinic((p) => ({ ...p, prospectWhatsapp: !!v }))}
+                    />
+                    WhatsApp
+                  </label>
+                </div>
+              </div>
             </div>
             
             <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -748,6 +1016,45 @@ export default function ClinicasPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: Send WhatsApp via API */}
+      <Dialog open={isWhatsDialogOpen} onOpenChange={setIsWhatsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enviar WhatsApp {targetClinicName ? `para ${targetClinicName}` : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="whats-number">Número</Label>
+              <Input id="whats-number" value={targetWhatsNumber || ''} disabled />
+            </div>
+            <div>
+              <Label htmlFor="whats-message">Mensagem</Label>
+              <Textarea
+                id="whats-message"
+                rows={4}
+                value={whatsappMessage}
+                onChange={(e) => setWhatsappMessage(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWhatsDialogOpen(false)} disabled={sendingWhats}>
+              Cancelar
+            </Button>
+            <Button onClick={sendWhatsappViaApi} disabled={sendingWhats}>
+              {sendingWhats ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Enviar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-} 
+}

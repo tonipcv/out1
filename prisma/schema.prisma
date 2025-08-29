@@ -296,6 +296,10 @@ model Clinic {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @default(now()) @updatedAt
   outbounds      OutboundClinic[]
+  // Prospecting status flags
+  prospectEmail   Boolean          @default(false)
+  prospectCall    Boolean          @default(false)
+  prospectWhatsapp Boolean         @default(false)
 
   @@index([nome])
 }

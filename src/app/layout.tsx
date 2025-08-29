@@ -13,10 +13,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Cslus Outboundgit',
-    template: '%s | Cslus Outbound'
+    default: 'Zuzz Outbound',
+    template: '%s | Zuzz Outbound'
   },
-  description: 'Cslus Outbound - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
+  description: 'Zuzz Outbound - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
   manifest: '/manifest.json',
   icons: {
     icon: [

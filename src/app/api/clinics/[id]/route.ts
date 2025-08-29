@@ -15,6 +15,10 @@ const clinicUpdateSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   whatsapp: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
+  // Prospecting flags
+  prospectEmail: z.boolean().optional(),
+  prospectCall: z.boolean().optional(),
+  prospectWhatsapp: z.boolean().optional(),
 });
 
 export async function GET(

@@ -34,7 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Outbound, Clinic } from "@prisma/client";
-import { PlusCircle, Pencil, Trash2, Building, Link, Mail, Phone, Instagram, User } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Building, Link, Mail, Phone, Instagram, User, Download, Loader2 } from "lucide-react";
 
 type OutboundTableProps = {
   initialOutbounds: Outbound[];
@@ -90,6 +90,7 @@ export default function OutboundTable({
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentOutbound, setCurrentOutbound] = useState<Partial<OutboundWithClinics>>({});
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
   // Estado para gerenciar clínicas vinculadas ao contato atual
   const [currentClinics, setCurrentClinics] = useState<ClinicFormData[]>([]);
@@ -295,13 +296,54 @@ export default function OutboundTable({
     router.push(`/outbound?page=${page}`);
   };
 
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      const res = await fetch(`/api/outbound?format=csv`, { method: 'GET' });
+      if (!res.ok) {
+        toast.error('Erro ao exportar CSV');
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `outbound-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV exportado');
+    } catch (e) {
+      console.error('Erro ao exportar CSV:', e);
+      toast.error('Erro ao exportar CSV');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <Button onClick={handleOpenNew} className="bg-white text-black border shadow-sm hover:bg-gray-100">
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Novo Contato
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportCsv}
+            className="bg-white text-black border shadow-sm hover:bg-gray-100"
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Exportar CSV
+          </Button>
+          <Button onClick={handleOpenNew} className="bg-white text-black border shadow-sm hover:bg-gray-100">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Novo Contato
+          </Button>
+        </div>
       </div>
 
       {/* Mobile view */}

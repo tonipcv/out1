@@ -9,7 +9,8 @@
     "lint": "next lint",
     "migrate-chatbots": "ts-node --project scripts/tsconfig.json scripts/migrate-chatbots.ts",
     "migrate": "node scripts/migrate.js",
-    "migrate-clinic": "node scripts/migrate-clinic.js"
+    "migrate-clinic": "node scripts/migrate-clinic.js",
+    "migrate:prospect-flags": "node tools/run-sql-migration.js tools/sql/20250829_add_clinic_prospect_flags.sql"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",
