@@ -327,3 +327,19 @@ model ContactInteraction {
 
   @@index([outboundId])
 }
+
+// Beauty salons
+model Salon {
+  id               String   @id @default(cuid())
+  nome             String
+  endereco         String?
+  instagram        String?
+  email            String?
+  telefone         String?
+  site             String?
+  numeroDeUnidades Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@index([nome])
+}

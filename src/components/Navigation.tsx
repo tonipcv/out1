@@ -39,7 +39,8 @@ export default function Navigation() {
     '/profile',
     '/outbound',
     '/resumo',
-    '/clinicas'
+    '/clinicas',
+    '/saloes'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -69,6 +70,12 @@ export default function Navigation() {
           label: 'Clínicas',
           icon: BuildingOffice2Icon,
           description: 'Gerenciar clínicas'
+        },
+        {
+          href: '/saloes',
+          label: 'Salões',
+          icon: BuildingOffice2Icon,
+          description: 'Gerenciar salões de beleza'
         },
       ]
     }
